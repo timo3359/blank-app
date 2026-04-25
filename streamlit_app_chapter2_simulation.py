@@ -1,11 +1,4 @@
-import os
-
 import streamlit as st
-
-try:
-    from mistralai import Mistral
-except ImportError:
-    Mistral = None
 
 st.set_page_config(page_title="RAG Agent Academy", page_icon="🧠", layout="wide")
 
@@ -108,8 +101,6 @@ CHAPTER_2_SCENARIO = (
     "Deine Aufgabe ist es, mit Hilfe des Chatbots eine plausible Loesung zu erarbeiten."
 )
 
-MISTRAL_MODEL_NAME = "mistral-large-latest"
-
 CHAPTER_2_SOURCES = [
     {
         "id": "handbuch",
@@ -127,20 +118,6 @@ CHAPTER_2_SOURCES = [
         "description": "Wartungs- und Kalibrierhistorie der Maschine.",
     },
 ]
-
-# Diese Dateien werden serverseitig geladen (nicht vom Endnutzer hochgeladen).
-# Passe die Pfade auf deine echten Unterlagen an.
-CHAPTER_2_SOURCE_FILE_PATHS = {
-    "handbuch": [
-        "rag_sources/handbuch_waldner13.txt",
-    ],
-    "stoermeldungen": [
-        "rag_sources/stoermeldungen_historie.txt",
-    ],
-    "wartung": [
-        "rag_sources/wartungsprotokolle.txt",
-    ],
-}
 
 CHAPTER_2_KNOWLEDGE = {
     "handbuch": {
@@ -190,16 +167,12 @@ def init_state() -> None:
         st.session_state.chapter_1_submitted = False
     if "chapter_1_score" not in st.session_state:
         st.session_state.chapter_1_score = 0
-    if "chapter_1_result_details" not in st.session_state:
-        st.session_state.chapter_1_result_details = []
     if "chapter_1_page" not in st.session_state:
         st.session_state.chapter_1_page = 0
     if "chapter_1_page_selector" not in st.session_state:
         st.session_state.chapter_1_page_selector = 0
     if "chapter_1_completed" not in st.session_state:
         st.session_state.chapter_1_completed = False
-    if "chapter_1_passed" not in st.session_state:
-        st.session_state.chapter_1_passed = False
     if "active_chapter" not in st.session_state:
         st.session_state.active_chapter = "Kapitel 1"
     if "active_chapter_selector" not in st.session_state:
@@ -216,8 +189,6 @@ def init_state() -> None:
                 ),
             }
         ]
-    if "chapter_2_mode" not in st.session_state:
-        st.session_state.chapter_2_mode = "Simulation (Regelbasiert)"
 
 
 def clamp_page(page: int, total_pages: int) -> int:
@@ -226,59 +197,6 @@ def clamp_page(page: int, total_pages: int) -> int:
 
 def source_name_map() -> dict[str, str]:
     return {source["id"]: source["name"] for source in CHAPTER_2_SOURCES}
-
-
-def get_mistral_api_key() -> str:
-    key_from_secrets = st.secrets.get("MISTRAL_API_KEY", "")
-    key_from_env = os.getenv("MISTRAL_API_KEY", "")
-    return key_from_secrets or key_from_env
-
-
-def load_script_source_documents() -> tuple[dict[str, list[dict[str, str]]], list[str]]:
-    docs_by_source: dict[str, list[dict[str, str]]] = {source["id"]: [] for source in CHAPTER_2_SOURCES}
-    missing_files: list[str] = []
-
-    for source_id, paths in CHAPTER_2_SOURCE_FILE_PATHS.items():
-        for path in paths:
-            try:
-                with open(path, "r", encoding="utf-8") as file:
-                    content = file.read().strip()
-                docs_by_source.setdefault(source_id, []).append(
-                    {
-                        "path": path,
-                        "content": content,
-                    }
-                )
-            except OSError:
-                missing_files.append(path)
-
-    return docs_by_source, missing_files
-
-
-def retrieve_document_chunks(
-    user_message: str,
-    selected_sources: list[str],
-    docs_by_source: dict[str, list[dict[str, str]]],
-    max_chunks: int = 4,
-) -> list[str]:
-    message_terms = [term for term in user_message.lower().split() if len(term) > 2]
-    candidates: list[tuple[int, str]] = []
-
-    for source_id in selected_sources:
-        for doc in docs_by_source.get(source_id, []):
-            content = doc["content"]
-            lowered_content = content.lower()
-            score = sum(1 for term in message_terms if term in lowered_content)
-            snippet = content[:700]
-            candidates.append((score, f"Quelle {doc['path']}:\n{snippet}"))
-
-    candidates.sort(key=lambda item: item[0], reverse=True)
-    top_candidates = [candidate[1] for candidate in candidates[:max_chunks] if candidate[0] > 0]
-
-    if not top_candidates:
-        top_candidates = [candidate[1] for candidate in candidates[:max_chunks]]
-
-    return top_candidates
 
 
 def reset_chapter_2_chat() -> None:
@@ -299,7 +217,7 @@ def sync_active_chapter() -> None:
 
 def render_chapter_switcher() -> None:
     chapter_options = ["Kapitel 1"]
-    if st.session_state.chapter_1_passed:
+    if st.session_state.chapter_1_completed:
         chapter_options.append("Kapitel 2")
 
     if st.session_state.active_chapter not in chapter_options:
@@ -315,8 +233,8 @@ def render_chapter_switcher() -> None:
             key="active_chapter_selector",
             on_change=sync_active_chapter,
         )
-        if not st.session_state.chapter_1_passed:
-            st.caption("Kapitel 2 wird nur mit 5/5 richtigen Antworten in Kapitel 1 freigeschaltet.")
+        if not st.session_state.chapter_1_completed:
+            st.caption("Kapitel 2 wird nach Abschluss von Kapitel 1 freigeschaltet.")
 
 
 def render_header(current_page: int, total_pages: int) -> None:
@@ -397,35 +315,6 @@ def render_quiz() -> None:
     st.write("Beantworte alle Fragen und klicke auf **Auswertung starten**.")
     st.info("Unter jeder Frage kannst du bei Bedarf einen Hinweis aufklappen.")
 
-    def render_stored_quiz_result() -> None:
-        if not st.session_state.chapter_1_submitted:
-            return
-
-        st.markdown("### Ergebnis")
-        for detail in st.session_state.chapter_1_result_details:
-            with st.container(border=True):
-                st.markdown(f"**Frage {detail['idx']}**")
-                if detail["is_correct"]:
-                    st.success("Richtig beantwortet.")
-                else:
-                    st.error("Noch nicht korrekt.")
-                st.write(f"Deine Antwort: {detail['user_answer']}")
-                st.write(f"Korrekte Antwort: {detail['correct_answer']}")
-
-        score = st.session_state.chapter_1_score
-        st.info(f"Du hast {score} von {len(CHAPTER_1_CONTENT)} Fragen korrekt beantwortet.")
-        if st.session_state.chapter_1_passed:
-            st.success(
-                "Stark! Kapitel 1 abgeschlossen. Du bist bereit fuer Kapitel 2: "
-                "RAG-Systeme konfigurieren."
-            )
-            if st.button("Zu Kapitel 2 wechseln", use_container_width=True):
-                st.session_state.active_chapter = "Kapitel 2"
-                st.rerun()
-        else:
-            st.warning("Lies die Lernkarten noch einmal und versuche den Quiz erneut.")
-            st.info("Kapitel 2 ist gesperrt, bis alle 5 Fragen korrekt beantwortet sind.")
-
     with st.form("chapter_1_quiz"):
         answers = {}
         for idx, item in enumerate(CHAPTER_1_CONTENT, start=1):
@@ -445,7 +334,6 @@ def render_quiz() -> None:
         submitted = st.form_submit_button("Auswertung starten", use_container_width=True)
 
     if not submitted:
-        render_stored_quiz_result()
         return
 
     unanswered_questions = [idx for idx, answer in answers.items() if answer == "Bitte waehlen..."]
@@ -459,8 +347,8 @@ def render_quiz() -> None:
 
     st.session_state.chapter_1_submitted = True
     score = 0
-    result_details = []
 
+    st.markdown("### Ergebnis")
     for idx, item in enumerate(CHAPTER_1_CONTENT, start=1):
         user_answer = answers[idx]
         is_answered = user_answer != "Bitte waehlen..."
@@ -468,21 +356,34 @@ def render_quiz() -> None:
 
         if is_correct:
             score += 1
-        if is_answered:
-            result_details.append(
-                {
-                    "idx": idx,
-                    "user_answer": user_answer,
-                    "correct_answer": item["correct"],
-                    "is_correct": is_correct,
-                }
-            )
+
+        with st.container(border=True):
+            st.markdown(f"**Frage {idx}**")
+            if is_correct:
+                st.success("Richtig beantwortet.")
+            else:
+                st.error("Noch nicht korrekt.")
+
+            st.write(f"Deine Antwort: {user_answer}")
+            if is_answered:
+                st.write(f"Korrekte Antwort: {item['correct']}")
 
     st.session_state.chapter_1_score = score
-    st.session_state.chapter_1_result_details = result_details
     st.session_state.chapter_1_completed = True
-    st.session_state.chapter_1_passed = score == len(CHAPTER_1_CONTENT)
-    render_stored_quiz_result()
+    st.info(f"Du hast {score} von {len(CHAPTER_1_CONTENT)} Fragen korrekt beantwortet.")
+
+    if score == len(CHAPTER_1_CONTENT):
+        st.success(
+            "Stark! Kapitel 1 abgeschlossen. Du bist bereit fuer Kapitel 2: "
+            "RAG-Systeme konfigurieren."
+        )
+    else:
+        st.warning("Lies die Lernkarten noch einmal und versuche den Quiz erneut.")
+
+    if st.button("Zu Kapitel 2 wechseln", use_container_width=True):
+        st.session_state.active_chapter = "Kapitel 2"
+        st.session_state.active_chapter_selector = "Kapitel 2"
+        st.rerun()
 
 
 def retrieve_context(user_message: str, selected_sources: list[str]) -> list[str]:
@@ -526,66 +427,6 @@ def generate_chapter_2_answer(user_message: str, selected_sources: list[str]) ->
     )
 
 
-def generate_real_rag_answer_mistral(
-    user_message: str,
-    selected_sources: list[str],
-    docs_by_source: dict[str, list[dict[str, str]]],
-) -> str:
-    if Mistral is None:
-        return (
-            "Mistral SDK ist nicht installiert. Bitte installiere Abhaengigkeiten aus requirements.txt "
-            "und starte die App neu."
-        )
-
-    if not selected_sources:
-        return (
-            "Fuer echtes RAG musst du mindestens eine Quelle aktivieren, damit Kontext geladen werden kann."
-        )
-
-    api_key = get_mistral_api_key()
-    if not api_key:
-        return (
-            "Kein Mistral API Key gefunden. Lege MISTRAL_API_KEY in Streamlit Secrets oder als Umgebungsvariable an."
-        )
-
-    context_chunks = retrieve_document_chunks(
-        user_message=user_message,
-        selected_sources=selected_sources,
-        docs_by_source=docs_by_source,
-    )
-    if not context_chunks:
-        return (
-            "Es wurden keine Dokumentinhalte gefunden. Pruefe CHAPTER_2_SOURCE_FILE_PATHS und Quelldateien."
-        )
-
-    system_prompt = (
-        "Du bist ein technischer Assistent fuer Produktionsanlagen. "
-        "Antworte ausschliesslich auf Basis des bereitgestellten Kontexts. "
-        "Wenn Kontext nicht ausreicht, sage das klar. "
-        "Liefere konkrete, sichere Pruefschritte in Reihenfolge."
-    )
-    rag_context = "\n\n".join(context_chunks)
-
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {
-            "role": "user",
-            "content": (
-                "Kontext aus den verknuepften Unterlagen:\n"
-                f"{rag_context}\n\n"
-                f"Nutzerfrage: {user_message}"
-            ),
-        },
-    ]
-
-    try:
-        client = Mistral(api_key=api_key)
-        response = client.chat.complete(model=MISTRAL_MODEL_NAME, messages=messages)
-        return response.choices[0].message.content
-    except Exception as error:
-        return f"Fehler beim Mistral-Aufruf: {error}"
-
-
 def render_chapter_2() -> None:
     st.title("RAG Agent Academy")
     st.subheader("Kapitel 2: Interaktives RAG-Modell")
@@ -600,8 +441,6 @@ def render_chapter_2() -> None:
         st.write(CHAPTER_2_SCENARIO)
 
     st.markdown("### Schritt 1: Quellen verbinden")
-    docs_by_source, missing_files = load_script_source_documents()
-
     options = [source["name"] for source in CHAPTER_2_SOURCES]
     id_by_name = {source["name"]: source["id"] for source in CHAPTER_2_SOURCES}
 
@@ -611,45 +450,6 @@ def render_chapter_2() -> None:
         default=[source_name_map()[source_id] for source_id in st.session_state.chapter_2_sources],
     )
     st.session_state.chapter_2_sources = [id_by_name[name] for name in selected_names]
-
-    st.markdown("### Schritt 1b: Betriebsmodus")
-    st.radio(
-        "Chat-Modus",
-        options=["Simulation (Regelbasiert)", "Echtes RAG (Mistral, Platzhalter)"],
-        key="chapter_2_mode",
-        horizontal=True,
-    )
-
-    st.caption("Dateiquellen werden serverseitig aus dem Skript geladen (kein Nutzer-Upload).")
-    if missing_files:
-        st.warning(
-            "Einige konfigurierte Quellen wurden nicht gefunden: " + ", ".join(missing_files)
-        )
-
-    with st.expander("Geladene Quell-Dateien (aus Skript)"):
-        has_any_doc = False
-        for source in CHAPTER_2_SOURCES:
-            source_docs = docs_by_source.get(source["id"], [])
-            if source_docs:
-                has_any_doc = True
-                st.markdown(f"**{source['name']}**")
-                for doc in source_docs:
-                    st.write(f"- {doc['path']}")
-        if not has_any_doc:
-            st.write("Noch keine Quelldateien gefunden. Passe CHAPTER_2_SOURCE_FILE_PATHS an.")
-
-    with st.expander("Mistral-Integration (Platzhalter)"):
-        api_key_available = "Ja" if get_mistral_api_key() else "Nein"
-        st.write(f"API Key in Secrets/Env gefunden: {api_key_available}")
-        st.code(
-            """# Laufzeitquellen fuer API-Key
-# 1) .streamlit/secrets.toml -> MISTRAL_API_KEY="..."
-# 2) Umgebungsvariable -> export MISTRAL_API_KEY="..."
-#
-# Im Modus "Echtes RAG" wird ein echter Mistral-Call ausgefuehrt.
-""",
-            language="python",
-        )
 
     info_cols = st.columns(len(CHAPTER_2_SOURCES))
     for idx, source in enumerate(CHAPTER_2_SOURCES):
@@ -666,6 +466,7 @@ def render_chapter_2() -> None:
     with action_col_2:
         if st.button("Zurueck zu Kapitel 1", use_container_width=True):
             st.session_state.active_chapter = "Kapitel 1"
+            st.session_state.active_chapter_selector = "Kapitel 1"
             st.rerun()
 
     st.markdown("### Schritt 2: Mit dem Chatbot arbeiten")
@@ -678,17 +479,10 @@ def render_chapter_2() -> None:
     user_prompt = st.chat_input("Stelle dem Chatbot eine Frage zur Situation...")
     if user_prompt:
         st.session_state.chapter_2_chat.append({"role": "user", "content": user_prompt})
-        if st.session_state.chapter_2_mode == "Simulation (Regelbasiert)":
-            assistant_answer = generate_chapter_2_answer(
-                user_message=user_prompt,
-                selected_sources=st.session_state.chapter_2_sources,
-            )
-        else:
-            assistant_answer = generate_real_rag_answer_mistral(
-                user_message=user_prompt,
-                selected_sources=st.session_state.chapter_2_sources,
-                docs_by_source=docs_by_source,
-            )
+        assistant_answer = generate_chapter_2_answer(
+            user_message=user_prompt,
+            selected_sources=st.session_state.chapter_2_sources,
+        )
         st.session_state.chapter_2_chat.append({"role": "assistant", "content": assistant_answer})
         st.rerun()
 
@@ -697,9 +491,6 @@ def render_chapter_2() -> None:
 def main() -> None:
     init_state()
     render_chapter_switcher()
-
-    if st.session_state.active_chapter == "Kapitel 2" and not st.session_state.chapter_1_passed:
-        st.session_state.active_chapter = "Kapitel 1"
 
     if st.session_state.active_chapter == "Kapitel 2":
         render_chapter_2()

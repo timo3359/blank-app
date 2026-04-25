@@ -1,0 +1,3 @@
+Wartungsprotokolle (Auszug)
+- Kalibrierung Einlaufmodul seit 17 Tagen ueberfaellig.
+- Erhoehte Vibration am Sensorhalter dokumentiert.

@@ -1,0 +1,4 @@
+Waldner 13 Handbuch (Auszug)
+- Bei Bechereintaktungsfehler zuerst Lichtschranke LS-4 reinigen.
+- Sollabstand LS-4: 12 mm.
+- Danach Referenzlauf starten und Taktverhalten pruefen.

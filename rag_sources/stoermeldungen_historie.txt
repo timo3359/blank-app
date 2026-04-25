@@ -1,0 +1,3 @@
+Stoermeldungen Historie (Auszug)
+- #1842: Nach Formatwechsel Sternrad-Anschlag nachjustiert, Referenzlauf erfolgreich.
+- #1771: Ruckeln durch lockeren Sensorhalter verursacht.
