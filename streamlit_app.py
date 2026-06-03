@@ -81,7 +81,7 @@ CHAPTER_1_CONTENT = [
             "Das Modell antwortet immer mit Gegenfragen",
         ],
         "correct": "Antworten basieren auf verifizierbaren Quellen",
-        "hint": "Frage dich, ob Aussagen auf konkrete, pruefbare Belege zurueckgefuehrt werden koennen.",
+        "hint": "Frage dich, ob Aussagen auf konkrete, pruefbare Belege zurueckgeführt werden koennen.",
     },
     {
         "term": "Mensch-KI-Kollaboration",
@@ -114,12 +114,12 @@ CHAPTER_2_SOURCES = [
     {
         "id": "handbuch",
         "name": "Handbuch Waldner 13",
-        "description": "Grundlagen, Stoerungsbilder und empfohlene Pruefschritte.",
+        "description": "Grundlagen, Störungsbilder und empfohlene Prüfschritte.",
     },
     {
         "id": "stoermeldungen",
-        "name": "Ehemalige Stoermeldungen",
-        "description": "Historische Vorfaelle mit Loesungsansaetzen aus dem Betrieb.",
+        "name": "Ehemalige Störmeldungen",
+        "description": "Historische Vorfälle mit Lösungsansätzen aus dem Betrieb.",
     },
     {
         "id": "wartung",
@@ -144,11 +144,11 @@ CHAPTER_2_SOURCE_FILE_PATHS = {
 
 CHAPTER_2_KNOWLEDGE = {
     "handbuch": {
-        "default": "Im Handbuch wird fuer Taktfehler zuerst Sensorposition, Foerderbandlauf und Synchronsignal geprueft.",
+        "default": "Im Handbuch wird fuer Taktfehler zuerst Sensorposition, Foerderbandlauf und Synchronsignal geprüft.",
         "rules": [
             {
                 "keywords": ["becher", "eintakt", "takt"],
-                "snippet": "Handbuch: Bei Problemen mit der Bechereintaktung zuerst Lichtschranke LS-4 auf Verschmutzung und Abstand pruefen.",
+                "snippet": "Handbuch: Bei Problemen mit der Bechereintaktung zuerst Lichtschranke LS-4 auf Verschmutzung und Abstand prüfen.",
             },
             {
                 "keywords": ["sensor", "lichtschranke"],
@@ -184,6 +184,47 @@ CHAPTER_2_KNOWLEDGE = {
     },
 }
 
+KNOWLEDGE_TOPICS = [
+    {
+        "id": "rag_intro",
+        "title": "Was ist RAG?",
+        "summary": "Grundidee von Retrieval-Augmented Generation, Vorteile und typische Einsatzszenarien.",
+        "details": (
+            "RAG verbindet ein Sprachmodell mit einer externen Wissensbasis. "
+            "Statt nur aus dem Trainingswissen zu antworten, werden relevante Dokumente gesucht, "
+            "als Kontext hinzugefügt und dann für die Antwort verwendet."
+        ),
+    },
+    {
+        "id": "prompting",
+        "title": "Prompting im Alltag",
+        "summary": "Wie gute Anfragen formuliert werden und welche Informationen wichtig sind.",
+        "details": (
+            "Gute Prompts benennen Ziel, Kontext, Rollenbild und erwartetes Ergebnis. "
+            "Je konkreter die Aufgabe und je besser die Rahmenbedingungen beschrieben sind, "
+            "desto konsistenter werden die Antworten."
+        ),
+    },
+    {
+        "id": "sources",
+        "title": "Quellen und Dokumente",
+        "summary": "Wie Handbuch, Stoermeldungen und Wartungsnotizen in RAG genutzt werden.",
+        "details": (
+            "Im Wissensteil kannst du dir anschauen, wie verschiedene Dokumenttypen aufgebaut sind. "
+            "In RAG werden Quellen normalerweise segmentiert, indiziert und dann bei passenden Fragen wiedergefunden."
+        ),
+    },
+    {
+        "id": "human_ai",
+        "title": "Mensch-KI-Zusammenarbeit",
+        "summary": "Welche Rolle der Mensch bei Kontrolle, Bewertung und Entscheidung hat.",
+        "details": (
+            "KI unterstuetzt bei Recherche, Strukturierung und Formulierung. "
+            "Die Verantwortung fuer fachliche Entscheidungen, Freigaben und Kontrolle bleibt aber beim Menschen."
+        ),
+    },
+]
+
 
 def init_state() -> None:
     if "chapter_1_submitted" not in st.session_state:
@@ -218,6 +259,10 @@ def init_state() -> None:
         ]
     if "chapter_2_mode" not in st.session_state:
         st.session_state.chapter_2_mode = "Simulation (Regelbasiert)"
+    if "app_section" not in st.session_state:
+        st.session_state.app_section = "start"
+    if "knowledge_topic" not in st.session_state:
+        st.session_state.knowledge_topic = KNOWLEDGE_TOPICS[0]["id"]
 
 
 def clamp_page(page: int, total_pages: int) -> int:
@@ -286,8 +331,8 @@ def reset_chapter_2_chat() -> None:
         {
             "role": "assistant",
             "content": (
-                "Chat wurde zurueckgesetzt. Ohne Quellen habe ich nur allgemeine Aussagen. "
-                "Waehle Unterlagen aus, um mich mit Kontext zu versorgen."
+                "Chat wurde zurückgesetzt. Ohne Quellen habe ich nur allgemeine Aussagen. "
+                "Wähle Unterlagen aus, um mich mit Kontext zu versorgen."
             ),
         }
     ]
@@ -295,6 +340,88 @@ def reset_chapter_2_chat() -> None:
 
 def sync_active_chapter() -> None:
     st.session_state.active_chapter = st.session_state.active_chapter_selector
+
+
+def go_to_learning_path() -> None:
+    st.session_state.app_section = "learning"
+    st.session_state.active_chapter = "Kapitel 1"
+
+
+def go_to_knowledge_section() -> None:
+    st.session_state.app_section = "knowledge"
+
+
+def render_start_screen() -> None:
+    st.title("RAG Agent Academy")
+    st.subheader("Womit möchtest du starten?")
+    st.write(
+        "Wähle entweder den geführten Lernpfad mit Quiz und interaktivem RAG-System "
+        "oder den freien Wissensteil zum Selbstlesen."
+    )
+
+    col_left, col_right = st.columns(2)
+    with col_left:
+        with st.container(border=True):
+            st.markdown("### Lernpfad")
+            st.write("Kapitel 1, Quiz und Kapitel 2 mit dem interaktiven RAG-Modell.")
+            if st.button("Zum Lernpfad", use_container_width=True):
+                go_to_learning_path()
+                st.rerun()
+    with col_right:
+        with st.container(border=True):
+            st.markdown("### Wissensteil")
+            st.write("Freies Lesen zu RAG, Prompting, Quellen und Mensch-KI-Zusammenarbeit.")
+            if st.button("Zum Wissensteil", use_container_width=True):
+                go_to_knowledge_section()
+                st.rerun()
+
+
+def render_knowledge_section() -> None:
+    st.title("RAG Agent Academy")
+    st.subheader("Wissensteil")
+    st.write(
+        "Dieser Bereich ist unabhängig vom Quiz und Lernpfad. "
+        "Hier kannst du Themen nachlesen und Inhalte frei durchgehen."
+    )
+
+    topic_titles = [topic["title"] for topic in KNOWLEDGE_TOPICS]
+    title_by_id = {topic["id"]: topic["title"] for topic in KNOWLEDGE_TOPICS}
+    st.selectbox(
+        "Thema wählen",
+        options=[topic["id"] for topic in KNOWLEDGE_TOPICS],
+        format_func=lambda topic_id: title_by_id[topic_id],
+        key="knowledge_topic",
+    )
+
+    selected_topic = next(topic for topic in KNOWLEDGE_TOPICS if topic["id"] == st.session_state.knowledge_topic)
+
+    with st.container(border=True):
+        st.markdown(f"### {selected_topic['title']}")
+        st.write(selected_topic["summary"])
+        st.write(selected_topic["details"])
+
+    st.markdown("### Weitere Themen")
+    cols = st.columns(len(KNOWLEDGE_TOPICS) - 1)
+    col_idx = 0
+    for topic in KNOWLEDGE_TOPICS:
+        if topic["id"] == selected_topic["id"]:
+            continue
+        with cols[col_idx]:
+            with st.container(border=True):
+                st.markdown(f"**{topic['title']}**")
+                st.write(topic["summary"])
+                if st.button(
+                    "Zum Thema",
+                    key=f"topic_btn_{topic['id']}",
+                    use_container_width=True,
+                ):
+                    st.session_state.knowledge_topic = topic["id"]
+                    st.rerun()
+        col_idx += 1
+
+    if st.button("Zurück zur Auswahl", use_container_width=True):
+        st.session_state.app_section = "start"
+        st.rerun()
 
 
 def render_chapter_switcher() -> None:
@@ -310,7 +437,7 @@ def render_chapter_switcher() -> None:
     with st.sidebar:
         st.markdown("## Lernpfad")
         st.selectbox(
-            "Kapitel auswaehlen",
+            "Kapitel auswählen",
             options=chapter_options,
             key="active_chapter_selector",
             on_change=sync_active_chapter,
@@ -393,7 +520,7 @@ def render_learning_card(card_index: int, total_cards: int) -> None:
 
 
 def render_quiz() -> None:
-    st.markdown("### Quiz: Pruefe dein Wissen")
+    st.markdown("### Quiz: Prüfe dein Wissen")
     st.write("Beantworte alle Fragen und klicke auf **Auswertung starten**.")
     st.info("Unter jeder Frage kannst du bei Bedarf einen Hinweis aufklappen.")
 
@@ -463,7 +590,7 @@ def render_quiz() -> None:
 
     for idx, item in enumerate(CHAPTER_1_CONTENT, start=1):
         user_answer = answers[idx]
-        is_answered = user_answer != "Bitte waehlen..."
+        is_answered = user_answer != "Bitte wählen..."
         is_correct = user_answer == item["correct"]
 
         if is_correct:
@@ -507,7 +634,7 @@ def generate_chapter_2_answer(user_message: str, selected_sources: list[str]) ->
         return (
             "Aktuell kann ich nur allgemein helfen, weil keine Unterlagen verbunden sind. "
             "Ich wuerde bei der Waldner 13 strukturiert vorgehen: "
-            "1) Symptom genau beobachten, 2) Sensorik pruefen, 3) letzten Eingriff klaeren. "
+            "1) Symptom genau beobachten, 2) Sensorik pruefen, 3) letzten Eingriff klären. "
             "Verbinde Handbuch oder Stoermeldungen, dann kann ich dir konkrete Schritte nennen."
         )
 
@@ -521,7 +648,7 @@ def generate_chapter_2_answer(user_message: str, selected_sources: list[str]) ->
         f"Aktive Quellen: {connected}\n\n"
         "Relevanter Kontext:\n"
         f"{evidence_lines}\n\n"
-        "Empfohlener naechster Schritt: Starte mit Sensor LS-4 (Reinigung + Abstand), "
+        "Empfohlener nächster Schritt: Starte mit Sensor LS-4 (Reinigung + Abstand), "
         "danach Referenzlauf. Wenn der Fehler bleibt, pruefe Sternrad-Anschlag und den Sensorhalter auf Spiel."
     )
 
@@ -533,7 +660,7 @@ def generate_real_rag_answer_mistral(
 ) -> str:
     if Mistral is None:
         return (
-            "Mistral SDK ist nicht installiert. Bitte installiere Abhaengigkeiten aus requirements.txt "
+            "Mistral SDK ist nicht installiert. Bitte installiere Abhängigkeiten aus requirements.txt "
             "und starte die App neu."
         )
 
@@ -571,7 +698,7 @@ def generate_real_rag_answer_mistral(
         {
             "role": "user",
             "content": (
-                "Kontext aus den verknuepften Unterlagen:\n"
+                "Kontext aus den verknüpften Unterlagen:\n"
                 f"{rag_context}\n\n"
                 f"Nutzerfrage: {user_message}"
             ),
@@ -606,7 +733,7 @@ def render_chapter_2() -> None:
     id_by_name = {source["name"]: source["id"] for source in CHAPTER_2_SOURCES}
 
     selected_names = st.multiselect(
-        "Waehle Unterlagen fuer dein RAG-System",
+        "Waehle Unterlagen für dein RAG-System",
         options=options,
         default=[source_name_map()[source_id] for source_id in st.session_state.chapter_2_sources],
     )
@@ -646,7 +773,7 @@ def render_chapter_2() -> None:
 # 1) .streamlit/secrets.toml -> MISTRAL_API_KEY="..."
 # 2) Umgebungsvariable -> export MISTRAL_API_KEY="..."
 #
-# Im Modus "Echtes RAG" wird ein echter Mistral-Call ausgefuehrt.
+# Im Modus "Echtes RAG" wird ein echter Mistral-Call ausgeführt.
 """,
             language="python",
         )
@@ -660,11 +787,11 @@ def render_chapter_2() -> None:
 
     action_col_1, action_col_2 = st.columns([1, 1])
     with action_col_1:
-        if st.button("Chat zuruecksetzen", use_container_width=True):
+        if st.button("Chat zurücksetzen", use_container_width=True):
             reset_chapter_2_chat()
             st.rerun()
     with action_col_2:
-        if st.button("Zurueck zu Kapitel 1", use_container_width=True):
+        if st.button("Zurück zu Kapitel 1", use_container_width=True):
             st.session_state.active_chapter = "Kapitel 1"
             st.rerun()
 
@@ -696,6 +823,15 @@ def render_chapter_2() -> None:
 
 def main() -> None:
     init_state()
+
+    if st.session_state.app_section == "start":
+        render_start_screen()
+        return
+
+    if st.session_state.app_section == "knowledge":
+        render_knowledge_section()
+        return
+
     render_chapter_switcher()
 
     if st.session_state.active_chapter == "Kapitel 2" and not st.session_state.chapter_1_passed:
