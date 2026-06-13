@@ -1,0 +1,10 @@
+id: sources
+title: Quellen und Dokumente
+
+summary:
+Wie Handbuch, Stoermeldungen und Wartungsnotizen in RAG genutzt werden.
+END
+
+details:
+Im Wissensteil kannst du dir anschauen, wie verschiedene Dokumenttypen aufgebaut sind. In RAG werden Quellen normalerweise segmentiert, indiziert und dann bei passenden Fragen wiedergefunden.
+END

@@ -1,0 +1,10 @@
+id: human_ai
+title: Mensch-KI-Zusammenarbeit
+
+summary:
+Welche Rolle der Mensch bei Kontrolle, Bewertung und Entscheidung hat.
+END
+
+details:
+KI unterstuetzt bei Recherche, Strukturierung und Formulierung. Die Verantwortung fuer fachliche Entscheidungen, Freigaben und Kontrolle bleibt aber beim Menschen.
+END

@@ -1,0 +1,10 @@
+id: rag_intro
+title: Was ist RAG?
+
+summary:
+Grundidee von Retrieval-Augmented Generation, Vorteile und typische Einsatzszenarien.
+END
+
+details:
+RAG verbindet ein Sprachmodell mit einer externen Wissensbasis. Statt nur aus dem Trainingswissen zu antworten, werden relevante Dokumente gesucht, als Kontext hinzugefügt und dann für die Antwort verwendet.
+END

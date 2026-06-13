@@ -1,0 +1,23 @@
+term: Retrieval-Augmented Generation (RAG)
+topic: RAG
+
+explanation:
+RAG kombiniert ein Sprachmodell mit externer Wissenssuche. Statt nur aus trainiertem Wissen zu antworten, werden vor der Antwort passende Dokumente gesucht und als Kontext genutzt.
+END
+
+question:
+Welcher Schritt macht aus einem normalen LLM-Chat ein RAG-System?
+END
+
+options:
+- Nur die Temperatur auf 0 setzen
+- Externe Inhalte abrufen und als Kontext einbinden
+- Mehr Emojis in den Prompt schreiben
+- Nur kuerzere Antworten erzwingen
+END
+
+correct: Externe Inhalte abrufen und als Kontext einbinden
+
+hint:
+Denke an den Unterschied zwischen reinem Modellwissen und externer Wissensbasis.
+END

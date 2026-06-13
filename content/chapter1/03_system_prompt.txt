@@ -1,0 +1,23 @@
+term: System Prompt
+topic: Prompting
+
+explanation:
+Der System Prompt legt Rolle, Ton und Regeln des Assistenten fest. Er wirkt wie ein Rahmen, in dem spaetere Nutzereingaben interpretiert werden.
+END
+
+question:
+Was ist die Hauptaufgabe eines System Prompts?
+END
+
+options:
+- Nur die Sprache Deutsch zu erzwingen
+- Rolle und Verhalten des Modells langfristig steuern
+- Bilder im Browser anzeigen
+- Die Datenbank zu sichern
+END
+
+correct: Rolle und Verhalten des Modells langfristig steuern
+
+hint:
+Es geht um Regeln, Persona und Grenzen fuer das Verhalten des Assistenten.
+END

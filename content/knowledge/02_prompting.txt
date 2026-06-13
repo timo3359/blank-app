@@ -1,0 +1,10 @@
+id: prompting
+title: Prompting im Alltag
+
+summary:
+Wie gute Anfragen formuliert werden und welche Informationen wichtig sind.
+END
+
+details:
+Gute Prompts benennen Ziel, Kontext, Rollenbild und erwartetes Ergebnis. Je konkreter die Aufgabe und je besser die Rahmenbedingungen beschrieben sind, desto konsistenter werden die Antworten.
+END

@@ -1,0 +1,23 @@
+term: Mensch-KI-Kollaboration
+topic: Mensch-KI Beziehung
+
+explanation:
+In der Zusammenarbeit mit KI bleibt der Mensch verantwortlich fuer Ziele, Bewertung und Entscheidungen. Die KI unterstuetzt bei Recherche, Entwuerfen und Alternativen, ersetzt aber nicht die fachliche Verantwortung.
+END
+
+question:
+Was beschreibt eine gesunde Mensch-KI-Beziehung im Arbeitsalltag?
+END
+
+options:
+- Die KI entscheidet allein ueber finale Ergebnisse
+- Menschen pruefen Ergebnisse und treffen die finalen Entscheidungen
+- Prompts werden nie dokumentiert
+- KI-Ausgaben werden ungeprueft weitergegeben
+END
+
+correct: Menschen pruefen Ergebnisse und treffen die finalen Entscheidungen
+
+hint:
+Wer traegt in Unternehmen am Ende Verantwortung fuer Entscheidungen?
+END

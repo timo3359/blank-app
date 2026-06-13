@@ -1,0 +1,23 @@
+term: Chunking
+topic: RAG
+
+explanation:
+Beim Chunking werden Dokumente in kleinere Abschnitte zerlegt. So kann die Suche genauer Treffer finden und dem Modell nur relevante Textteile liefern.
+END
+
+question:
+Warum wird Chunking in RAG-Pipelines verwendet?
+END
+
+options:
+- Um die Schriftgroesse der Dokumente zu veraendern
+- Um Daten in kleinere, besser durchsuchbare Einheiten zu teilen
+- Um alle Quellen zu loeschen
+- Um den Prompt komplett zu ersetzen
+END
+
+correct: Um Daten in kleinere, besser durchsuchbare Einheiten zu teilen
+
+hint:
+Der Retriever braucht handhabbare Textstuecke statt sehr langer Seiten.
+END

@@ -1,0 +1,23 @@
+term: Grounding
+topic: Prompting
+
+explanation:
+Grounding bedeutet, Antworten eng an konkrete Quellen und Fakten zu binden. Damit sinkt das Risiko von Halluzinationen und die Antwort wird nachvollziehbarer.
+END
+
+question:
+Woran erkennst du gute Grounding-Praxis?
+END
+
+options:
+- Antworten basieren auf verifizierbaren Quellen
+- Antworten sind absichtlich vage
+- Der Bot ignoriert Kontextdokumente
+- Das Modell antwortet immer mit Gegenfragen
+END
+
+correct: Antworten basieren auf verifizierbaren Quellen
+
+hint:
+Frage dich, ob Aussagen auf konkrete, pruefbare Belege zurueckgefuehrt werden koennen.
+END

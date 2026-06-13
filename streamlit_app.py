@@ -10,98 +10,173 @@ except ImportError:
 st.set_page_config(page_title="RAG Agent Academy", page_icon="🧠", layout="wide")
 
 
-# Kapitelinhalte zentral als Datenstruktur.
-# Du kannst Begriffe, Erklaerungen, Antwortoptionen und korrekte Antwort spaeter hier leicht anpassen.
-CHAPTER_1_CONTENT = [
-    {
-        "term": "Retrieval-Augmented Generation (RAG)",
-        "topic": "RAG",
-        "explanation": (
-            "RAG kombiniert ein Sprachmodell mit externer Wissenssuche. "
-            "Statt nur aus trainiertem Wissen zu antworten, werden vor der Antwort "
-            "passende Dokumente gesucht und als Kontext genutzt."
-        ),
-        "question": "Welcher Schritt macht aus einem normalen LLM-Chat ein RAG-System?",
-        "options": [
-            "Nur die Temperatur auf 0 setzen",
-            "Externe Inhalte abrufen und als Kontext einbinden",
-            "Mehr Emojis in den Prompt schreiben",
-            "Nur kuerzere Antworten erzwingen",
-        ],
-        "correct": "Externe Inhalte abrufen und als Kontext einbinden",
-        "hint": "Denke an den Unterschied zwischen reinem Modellwissen und externer Wissensbasis.",
-    },
-    {
-        "term": "Chunking",
-        "topic": "RAG",
-        "explanation": (
-            "Beim Chunking werden Dokumente in kleinere Abschnitte zerlegt. "
-            "So kann die Suche genauer Treffer finden und dem Modell nur relevante "
-            "Textteile liefern."
-        ),
-        "question": "Warum wird Chunking in RAG-Pipelines verwendet?",
-        "options": [
-            "Um die Schriftgroesse der Dokumente zu veraendern",
-            "Um Daten in kleinere, besser durchsuchbare Einheiten zu teilen",
-            "Um alle Quellen zu loeschen",
-            "Um den Prompt komplett zu ersetzen",
-        ],
-        "correct": "Um Daten in kleinere, besser durchsuchbare Einheiten zu teilen",
-        "hint": "Der Retriever braucht handhabbare Textstuecke statt sehr langer Seiten.",
-    },
-    {
-        "term": "System Prompt",
-        "topic": "Prompting",
-        "explanation": (
-            "Der System Prompt legt Rolle, Ton und Regeln des Assistenten fest. "
-            "Er wirkt wie ein Rahmen, in dem spaetere Nutzereingaben interpretiert werden."
-        ),
-        "question": "Was ist die Hauptaufgabe eines System Prompts?",
-        "options": [
-            "Nur die Sprache Deutsch zu erzwingen",
-            "Rolle und Verhalten des Modells langfristig steuern",
-            "Bilder im Browser anzeigen",
-            "Die Datenbank zu sichern",
-        ],
-        "correct": "Rolle und Verhalten des Modells langfristig steuern",
-        "hint": "Es geht um Regeln, Persona und Grenzen fuer das Verhalten des Assistenten.",
-    },
-    {
-        "term": "Grounding",
-        "topic": "Prompting",
-        "explanation": (
-            "Grounding bedeutet, Antworten eng an konkrete Quellen und Fakten zu binden. "
-            "Damit sinkt das Risiko von Halluzinationen und die Antwort wird nachvollziehbarer."
-        ),
-        "question": "Woran erkennst du gute Grounding-Praxis?",
-        "options": [
-            "Antworten basieren auf verifizierbaren Quellen",
-            "Antworten sind absichtlich vage",
-            "Der Bot ignoriert Kontextdokumente",
-            "Das Modell antwortet immer mit Gegenfragen",
-        ],
-        "correct": "Antworten basieren auf verifizierbaren Quellen",
-        "hint": "Frage dich, ob Aussagen auf konkrete, pruefbare Belege zurueckgeführt werden koennen.",
-    },
-    {
-        "term": "Mensch-KI-Kollaboration",
-        "topic": "Mensch-KI Beziehung",
-        "explanation": (
-            "In der Zusammenarbeit mit KI bleibt der Mensch verantwortlich fuer Ziele, "
-            "Bewertung und Entscheidungen. Die KI unterstuetzt bei Recherche, Entwuerfen "
-            "und Alternativen, ersetzt aber nicht die fachliche Verantwortung."
-        ),
-        "question": "Was beschreibt eine gesunde Mensch-KI-Beziehung im Arbeitsalltag?",
-        "options": [
-            "Die KI entscheidet allein ueber finale Ergebnisse",
-            "Menschen pruefen Ergebnisse und treffen die finalen Entscheidungen",
-            "Prompts werden nie dokumentiert",
-            "KI-Ausgaben werden ungeprueft weitergegeben",
-        ],
-        "correct": "Menschen pruefen Ergebnisse und treffen die finalen Entscheidungen",
-        "hint": "Wer traegt in Unternehmen am Ende Verantwortung fuer Entscheidungen?",
-    },
-]
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONTENT_DIR = os.path.join(BASE_DIR, "content")
+CHAPTER_1_CONTENT_DIR = os.path.join(CONTENT_DIR, "chapter1")
+KNOWLEDGE_TOPICS_DIR = os.path.join(CONTENT_DIR, "knowledge")
+
+
+def read_text_file(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as file:
+        return file.read().strip()
+
+
+def load_text_files(directory: str) -> list[str]:
+    if not os.path.isdir(directory):
+        return []
+
+    return [
+        os.path.join(directory, name)
+        for name in sorted(os.listdir(directory))
+        if name.endswith(".txt")
+    ]
+
+
+def parse_text_block(lines: list[str], start_idx: int, file_path: str, field_name: str) -> tuple[str, int]:
+    block_lines: list[str] = []
+    idx = start_idx
+
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "END":
+            return "\n".join(block_lines).strip(), idx + 1
+        block_lines.append(line.rstrip())
+        idx += 1
+
+    raise ValueError(f"{file_path}: Feld '{field_name}' endet nicht mit END.")
+
+
+def parse_list_block(lines: list[str], start_idx: int, file_path: str, field_name: str) -> tuple[list[str], int]:
+    items: list[str] = []
+    idx = start_idx
+
+    while idx < len(lines):
+        line = lines[idx].strip()
+        if line == "END":
+            return items, idx + 1
+        if not line:
+            idx += 1
+            continue
+        if not line.startswith("- "):
+            raise ValueError(f"{file_path}: Feld '{field_name}' erwartet Listenpunkte mit '- '.")
+        items.append(line[2:].strip())
+        idx += 1
+
+    raise ValueError(f"{file_path}: Feld '{field_name}' endet nicht mit END.")
+
+
+def parse_chapter_card_file(path: str) -> dict[str, object]:
+    lines = read_text_file(path).splitlines()
+    item: dict[str, object] = {}
+    idx = 0
+
+    while idx < len(lines):
+        line = lines[idx].strip()
+        if not line or line.startswith("#"):
+            idx += 1
+            continue
+        if ":" not in line:
+            raise ValueError(f"{path}: Ungueltige Zeile '{line}'.")
+
+        key, value = line.split(":", 1)
+        key = key.strip().lower()
+        value = value.strip()
+        idx += 1
+
+        if key in {"term", "topic", "correct"}:
+            if not value:
+                raise ValueError(f"{path}: Feld '{key}' braucht einen Einzeiler.")
+            item[key] = value
+        elif key in {"explanation", "question", "hint"}:
+            if value:
+                item[key] = value
+            else:
+                parsed_value, idx = parse_text_block(lines, idx, path, key)
+                item[key] = parsed_value
+        elif key == "options":
+            if value:
+                raise ValueError(f"{path}: Feld 'options' muss als Block mit Listenpunkten geschrieben werden.")
+            item[key], idx = parse_list_block(lines, idx, path, key)
+        else:
+            raise ValueError(f"{path}: Unbekanntes Feld '{key}'.")
+
+    required_fields = {"term", "topic", "explanation", "question", "options", "correct", "hint"}
+    missing_fields = sorted(required_fields - set(item))
+    if missing_fields:
+        raise ValueError(f"{path}: Fehlende Felder: {', '.join(missing_fields)}")
+
+    return {
+        "term": item["term"],
+        "topic": item["topic"],
+        "explanation": item["explanation"],
+        "question": item["question"],
+        "options": item["options"],
+        "correct": item["correct"],
+        "hint": item["hint"],
+    }
+
+
+def parse_knowledge_topic_file(path: str) -> dict[str, str]:
+    lines = read_text_file(path).splitlines()
+    topic: dict[str, str] = {}
+    idx = 0
+
+    while idx < len(lines):
+        line = lines[idx].strip()
+        if not line or line.startswith("#"):
+            idx += 1
+            continue
+        if ":" not in line:
+            raise ValueError(f"{path}: Ungueltige Zeile '{line}'.")
+
+        key, value = line.split(":", 1)
+        key = key.strip().lower()
+        value = value.strip()
+        idx += 1
+
+        if key in {"id", "title"}:
+            if not value:
+                raise ValueError(f"{path}: Feld '{key}' braucht einen Einzeiler.")
+            topic[key] = value
+        elif key in {"summary", "details"}:
+            if value:
+                topic[key] = value
+            else:
+                parsed_value, idx = parse_text_block(lines, idx, path, key)
+                topic[key] = parsed_value
+        else:
+            raise ValueError(f"{path}: Unbekanntes Feld '{key}'.")
+
+    required_fields = {"id", "title", "summary", "details"}
+    missing_fields = sorted(required_fields - set(topic))
+    if missing_fields:
+        raise ValueError(f"{path}: Fehlende Felder: {', '.join(missing_fields)}")
+
+    return {
+        "id": topic["id"],
+        "title": topic["title"],
+        "summary": topic["summary"],
+        "details": topic["details"],
+    }
+
+
+def load_chapter_1_content() -> list[dict[str, object]]:
+    items: list[dict[str, object]] = []
+    for path in load_text_files(CHAPTER_1_CONTENT_DIR):
+        items.append(parse_chapter_card_file(path))
+    return items
+
+
+def load_knowledge_topics() -> list[dict[str, str]]:
+    items: list[dict[str, str]] = []
+    for path in load_text_files(KNOWLEDGE_TOPICS_DIR):
+        items.append(parse_knowledge_topic_file(path))
+    return items
+
+
+# Kapitelinhalte zentral als Textdateien.
+# Jede Lernkarte und jedes Wissensthema kann nun separat bearbeitet werden.
+CHAPTER_1_CONTENT = load_chapter_1_content()
 
 CHAPTER_2_SCENARIO = (
     "Du bist an der Maschine Waldner 13 und die Bechereintaktung will nicht funktionieren. "
@@ -184,46 +259,7 @@ CHAPTER_2_KNOWLEDGE = {
     },
 }
 
-KNOWLEDGE_TOPICS = [
-    {
-        "id": "rag_intro",
-        "title": "Was ist RAG?",
-        "summary": "Grundidee von Retrieval-Augmented Generation, Vorteile und typische Einsatzszenarien.",
-        "details": (
-            "RAG verbindet ein Sprachmodell mit einer externen Wissensbasis. "
-            "Statt nur aus dem Trainingswissen zu antworten, werden relevante Dokumente gesucht, "
-            "als Kontext hinzugefügt und dann für die Antwort verwendet."
-        ),
-    },
-    {
-        "id": "prompting",
-        "title": "Prompting im Alltag",
-        "summary": "Wie gute Anfragen formuliert werden und welche Informationen wichtig sind.",
-        "details": (
-            "Gute Prompts benennen Ziel, Kontext, Rollenbild und erwartetes Ergebnis. "
-            "Je konkreter die Aufgabe und je besser die Rahmenbedingungen beschrieben sind, "
-            "desto konsistenter werden die Antworten."
-        ),
-    },
-    {
-        "id": "sources",
-        "title": "Quellen und Dokumente",
-        "summary": "Wie Handbuch, Stoermeldungen und Wartungsnotizen in RAG genutzt werden.",
-        "details": (
-            "Im Wissensteil kannst du dir anschauen, wie verschiedene Dokumenttypen aufgebaut sind. "
-            "In RAG werden Quellen normalerweise segmentiert, indiziert und dann bei passenden Fragen wiedergefunden."
-        ),
-    },
-    {
-        "id": "human_ai",
-        "title": "Mensch-KI-Zusammenarbeit",
-        "summary": "Welche Rolle der Mensch bei Kontrolle, Bewertung und Entscheidung hat.",
-        "details": (
-            "KI unterstuetzt bei Recherche, Strukturierung und Formulierung. "
-            "Die Verantwortung fuer fachliche Entscheidungen, Freigaben und Kontrolle bleibt aber beim Menschen."
-        ),
-    },
-]
+KNOWLEDGE_TOPICS = load_knowledge_topics()
 
 
 def init_state() -> None:
@@ -351,6 +387,25 @@ def go_to_knowledge_section() -> None:
     st.session_state.app_section = "knowledge"
 
 
+def render_global_sidebar() -> None:
+    with st.sidebar:
+        st.markdown("## Bereich wechseln")
+        if st.session_state.app_section == "learning":
+            st.button(
+                "Zum Wissensteil",
+                use_container_width=True,
+                key="sidebar_to_knowledge",
+                on_click=go_to_knowledge_section,
+            )
+        elif st.session_state.app_section == "knowledge":
+            st.button(
+                "Zum Lernpfad",
+                use_container_width=True,
+                key="sidebar_to_learning",
+                on_click=go_to_learning_path,
+            )
+
+
 def render_start_screen() -> None:
     st.title("RAG Agent Academy")
     st.subheader("Womit möchtest du starten?")
@@ -364,19 +419,20 @@ def render_start_screen() -> None:
         with st.container(border=True):
             st.markdown("### Lernpfad")
             st.write("Kapitel 1, Quiz und Kapitel 2 mit dem interaktiven RAG-Modell.")
-            if st.button("Zum Lernpfad", use_container_width=True):
+            if st.button("Zum Lernpfad", use_container_width=True, key="start_learning_path"):
                 go_to_learning_path()
                 st.rerun()
     with col_right:
         with st.container(border=True):
             st.markdown("### Wissensteil")
             st.write("Freies Lesen zu RAG, Prompting, Quellen und Mensch-KI-Zusammenarbeit.")
-            if st.button("Zum Wissensteil", use_container_width=True):
+            if st.button("Zum Wissensteil", use_container_width=True, key="start_knowledge_section"):
                 go_to_knowledge_section()
                 st.rerun()
 
 
 def render_knowledge_section() -> None:
+    render_global_sidebar()
     st.title("RAG Agent Academy")
     st.subheader("Wissensteil")
     st.write(
@@ -419,7 +475,7 @@ def render_knowledge_section() -> None:
                     st.rerun()
         col_idx += 1
 
-    if st.button("Zurück zur Auswahl", use_container_width=True):
+    if st.button("Zurück zur Auswahl", use_container_width=True, key="knowledge_back_to_start"):
         st.session_state.app_section = "start"
         st.rerun()
 
@@ -436,6 +492,12 @@ def render_chapter_switcher() -> None:
 
     with st.sidebar:
         st.markdown("## Lernpfad")
+        st.button(
+            "Zum Wissensteil",
+            use_container_width=True,
+            key="chapter_sidebar_to_knowledge",
+            on_click=go_to_knowledge_section,
+        )
         st.selectbox(
             "Kapitel auswählen",
             options=chapter_options,
@@ -495,7 +557,7 @@ def render_step_navigation(current_page: int, total_pages: int) -> int:
 
     prev_col, next_col = st.columns(2)
     with prev_col:
-        if st.button("Zurueck", use_container_width=True, disabled=current_page == 0):
+        if st.button("Zurueck", use_container_width=True, disabled=current_page == 0, key="chapter1_prev"):
             st.session_state.chapter_1_page = clamp_page(current_page - 1, total_pages)
             st.rerun()
     with next_col:
@@ -503,6 +565,7 @@ def render_step_navigation(current_page: int, total_pages: int) -> int:
             "Weiter",
             use_container_width=True,
             disabled=current_page == total_pages - 1,
+            key="chapter1_next",
         ):
             st.session_state.chapter_1_page = clamp_page(current_page + 1, total_pages)
             st.rerun()
@@ -546,7 +609,7 @@ def render_quiz() -> None:
                 "Stark! Kapitel 1 abgeschlossen. Du bist bereit fuer Kapitel 2: "
                 "RAG-Systeme konfigurieren."
             )
-            if st.button("Zu Kapitel 2 wechseln", use_container_width=True):
+            if st.button("Zu Kapitel 2 wechseln", use_container_width=True, key="go_chapter2"):
                 st.session_state.active_chapter = "Kapitel 2"
                 st.rerun()
         else:
@@ -787,11 +850,11 @@ def render_chapter_2() -> None:
 
     action_col_1, action_col_2 = st.columns([1, 1])
     with action_col_1:
-        if st.button("Chat zurücksetzen", use_container_width=True):
+        if st.button("Chat zurücksetzen", use_container_width=True, key="chapter2_reset_chat"):
             reset_chapter_2_chat()
             st.rerun()
     with action_col_2:
-        if st.button("Zurück zu Kapitel 1", use_container_width=True):
+        if st.button("Zurück zu Kapitel 1", use_container_width=True, key="chapter2_back_to_ch1"):
             st.session_state.active_chapter = "Kapitel 1"
             st.rerun()
 
@@ -830,6 +893,10 @@ def main() -> None:
 
     if st.session_state.app_section == "knowledge":
         render_knowledge_section()
+        return
+
+    if not CHAPTER_1_CONTENT:
+        st.error("Es wurden keine Kapitel-1-Inhalte geladen. Prüfe die TXT-Dateien in content/chapter1.")
         return
 
     render_chapter_switcher()
