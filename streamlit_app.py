@@ -407,8 +407,14 @@ def render_global_sidebar() -> None:
 
 
 def render_start_screen() -> None:
-    st.title("RAG Agent Academy")
-    st.subheader("Womit möchtest du starten?")
+    col_image, col_title = st.columns([1, 5])
+    with col_image:
+        st.image("assets/General/lg-popp-feinkost.png", width=160)
+    with col_title:
+        st.title("Popp Feinkost KI-Akademie")
+    st.subheader("Werde der nächste KI-Champion in der Produktion!")
+    st.subheader("")
+    st.subheader("Womit möchtest Du starten?")
     st.write(
         "Wähle entweder den geführten Lernpfad mit Quiz und interaktivem RAG-System "
         "oder den freien Wissensteil zum Selbstlesen."
@@ -418,14 +424,14 @@ def render_start_screen() -> None:
     with col_left:
         with st.container(border=True):
             st.markdown("### Lernpfad")
-            st.write("Kapitel 1, Quiz und Kapitel 2 mit dem interaktiven RAG-Modell.")
+            st.write("Hier lernst Du alles wichtige über KI-Systeme und der Anwendung in der Praxis.")
             if st.button("Zum Lernpfad", use_container_width=True, key="start_learning_path"):
                 go_to_learning_path()
                 st.rerun()
     with col_right:
         with st.container(border=True):
             st.markdown("### Wissensteil")
-            st.write("Freies Lesen zu RAG, Prompting, Quellen und Mensch-KI-Zusammenarbeit.")
+            st.write("Schaue hier rein, um dein Wissen zu vertiefen oder gezielte Fragen zu beantworten.")
             if st.button("Zum Wissensteil", use_container_width=True, key="start_knowledge_section"):
                 go_to_knowledge_section()
                 st.rerun()
@@ -433,7 +439,11 @@ def render_start_screen() -> None:
 
 def render_knowledge_section() -> None:
     render_global_sidebar()
-    st.title("RAG Agent Academy")
+    col_image, col_title = st.columns([1, 5])
+    with col_image:
+        st.image("assets/General/lg-popp-feinkost.png", width=160)
+    with col_title:
+        st.title("Popp Feinkost KI-Akademie")
     st.subheader("Wissensteil")
     st.write(
         "Dieser Bereich ist unabhängig vom Quiz und Lernpfad. "
@@ -509,7 +519,11 @@ def render_chapter_switcher() -> None:
 
 
 def render_header(current_page: int, total_pages: int) -> None:
-    st.title("RAG Agent Academy")
+    col_image, col_title = st.columns([1, 5])
+    with col_image:
+        st.image("assets/General/lg-popp-feinkost.png", width=160)
+    with col_title:
+        st.title("Popp Feinkost KI-Akademie")
     st.subheader("Kapitel 1: Grundlagen verstehen")
     st.write(
         "In diesem Kapitel hat jede Lernkarte eine eigene Seite. "
@@ -777,7 +791,11 @@ def generate_real_rag_answer_mistral(
 
 
 def render_chapter_2() -> None:
-    st.title("RAG Agent Academy")
+    col_image, col_title = st.columns([1, 5])
+    with col_image:
+        st.image("assets/General/lg-popp-feinkost.png", width=160)
+    with col_title:
+        st.title("Popp Feinkost KI-Akademie")
     st.subheader("Kapitel 2: Interaktives RAG-Modell")
     st.write(
         "Hier erlebst du den Unterschied zwischen einem Chatbot ohne Wissensbasis "
